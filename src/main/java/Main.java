@@ -127,19 +127,19 @@ public class Main {
             model.setRowCount(0);
 
             if (currentMode.equals("Drivers")) {
-                rs = stmt.executeQuery("SELECT * FROM Drivers");
+                rs = stmt.executeQuery("SELECT d.name, d.driverLicenseNumber, d.gender, d.birthDate, d.licenseExpiryDate FROM Drivers d");
                 while (rs.next()) {
-                    model.addRow(new Object[]{rs.getString("name"), rs.getString("driverLicenseNumber"), rs.getString("gender"), rs.getString("birthDate"), rs.getString("licenseExpiryDate")});
+                    model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)});
                 }
             } else if (currentMode.equals("Cars")) {
-                rs = stmt.executeQuery("SELECT * FROM Cars");
+                rs = stmt.executeQuery("SELECT c.licensePlate, d.name, c.model, c.color, c.vin, c.insuranceExpiryDate, c.inspectionExpiryDate FROM Cars c JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
                 while (rs.next()) {
-                    model.addRow(new Object[]{rs.getString("licensePlate"), rs.getString("driverLicenseNumber"), rs.getString("model"), rs.getString("color"), rs.getString("vin"), rs.getString("insuranceExpiryDate"), rs.getString("inspectionExpiryDate")});
+                    model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7)});
                 }
             } else if (currentMode.equals("Violations")) {
-                rs = stmt.executeQuery("SELECT * FROM Violations");
+                rs = stmt.executeQuery("SELECT d.name, c.licensePlate, v.violationType, v.date FROM Violations v JOIN Cars c ON v.vin = c.vin JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
                 while (rs.next()) {
-                    model.addRow(new Object[]{rs.getInt("id"), rs.getString("vin"), rs.getString("violationType"), rs.getString("date")});
+                    model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)});
                 }
             }
         } catch (SQLException ex) {
