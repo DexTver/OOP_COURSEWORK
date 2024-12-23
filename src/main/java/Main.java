@@ -38,9 +38,9 @@ public class Main {
 
         // Меню Добавить
         JMenu addMenu = new JMenu("Добавить");
-        JMenuItem addDriver = new JMenuItem("Добавить водителя");
-        JMenuItem addCar = new JMenuItem("Добавить машину");
-        JMenuItem addViolation = new JMenuItem("Добавить нарушение");
+        JMenuItem addDriver = new JMenuItem("Водителя");
+        JMenuItem addCar = new JMenuItem("Машину");
+        JMenuItem addViolation = new JMenuItem("Нарушение");
         addMenu.add(addDriver);
         addMenu.add(addCar);
         addMenu.add(addViolation);
@@ -106,6 +106,16 @@ public class Main {
             loadDatabase();
         });
 
+        addCar.addActionListener(e -> {
+            addCarDialog(frame);
+            loadDatabase();
+        });
+
+        addViolation.addActionListener(e -> {
+            addViolationDialog(frame);
+            loadDatabase();
+        });
+
         deleteRecord.addActionListener(e -> {
             deleteSelectedRecords(frame);
             loadDatabase();
@@ -149,7 +159,7 @@ public class Main {
                     }
                     break;
                 case "Violations":
-                    rs = stmt.executeQuery("SELECT d.name, c.licensePlate, v.violationType, v.date FROM Violations v JOIN Cars c ON v.vin = c.vin JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
+                    rs = stmt.executeQuery("SELECT d.name, c.licensePlate, v.violationType, v.date FROM Violations v JOIN Cars c ON v.licensePlate = c.licensePlate JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
                     while (rs.next()) {
                         model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)});
                     }
@@ -175,12 +185,11 @@ public class Main {
                 try {
                     Driver driver = new Driver(
                             nameField.getText(), genderField.getText(), birthDateField.getText(), licenseNumberField.getText(), expiryDateField.getText(), conn);
-                    PreparedStatement pstmt = conn.prepareStatement(
-                            "INSERT INTO Drivers (name, gender, birthDate, driverLicenseNumber, licenseExpiryDate) VALUES (?, ?, ?, ?, ?)");
-                    pstmt.setString(1, driver.getName());
-                    pstmt.setString(2, driver.getGender());
-                    pstmt.setString(3, driver.getBirthDate());
-                    pstmt.setString(4, driver.getDriverLicenseNumber());
+                    PreparedStatement pstmt = conn.prepareStatement("INSERT INTO Drivers VALUES (?, ?, ?, ?, ?)");
+                    pstmt.setString(1, driver.getDriverLicenseNumber());
+                    pstmt.setString(2, driver.getName());
+                    pstmt.setString(3, driver.getGender());
+                    pstmt.setString(4, driver.getBirthDate());
                     pstmt.setString(5, driver.getLicenseExpiryDate());
                     pstmt.executeUpdate();
                     break;
@@ -193,7 +202,95 @@ public class Main {
         }
     }
 
-    private static void deleteSelectedRecords(JFrame frame) {
+    public static void addCarDialog(JFrame frame) {
+        JTextField vinField = new JTextField();
+        JTextField licenseNumberField = new JTextField();
+        JTextField licensePlateField = new JTextField();
+        JTextField colorField = new JTextField();
+        JTextField modelField = new JTextField();
+        JTextField inspectionField = new JTextField();
+        JTextField insuranceField = new JTextField();
+
+        Object[] message = {
+                "VIN:", vinField,
+                "Номер ВУ:", licenseNumberField,
+                "Номерной знак:", licensePlateField,
+                "Цвет:", colorField,
+                "Модель:", modelField,
+                "Дата окончания техосмотра:", inspectionField,
+                "Дата окончания страховки:", insuranceField
+        };
+
+        while (true) {
+            int option = JOptionPane.showConfirmDialog(frame, message, "Добавить машину", JOptionPane.OK_CANCEL_OPTION);
+            if (option == JOptionPane.OK_OPTION) {
+                try {
+                    Car car = new Car(
+                            vinField.getText(),
+                            licenseNumberField.getText(),
+                            licensePlateField.getText(),
+                            colorField.getText(),
+                            modelField.getText(),
+                            inspectionField.getText(),
+                            insuranceField.getText(),
+                            conn
+                    );
+                    PreparedStatement pstmt = conn.prepareStatement("INSERT INTO Cars VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    pstmt.setString(1, car.getLicensePlate());
+                    pstmt.setString(2, car.getDriverLicenseNumber());
+                    pstmt.setString(3, car.getVIN());
+                    pstmt.setString(4, car.getColor());
+                    pstmt.setString(5, car.getModel());
+                    pstmt.setString(6, car.getInspectionExpiryDate());
+                    pstmt.setString(7, car.getInsuranceExpiryDate());
+                    pstmt.executeUpdate();
+                    break;
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, ex.getMessage(), "Ошибка", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    public static void addViolationDialog(JFrame frame) {
+        JTextField licensePlateField = new JTextField();
+        JTextField dateField = new JTextField();
+        JTextField typeField = new JTextField();
+
+        Object[] message = {
+                "Номер машины:", licensePlateField,
+                "Дата нарушения:", dateField,
+                "Тип нарушения:", typeField
+        };
+
+        while (true) {
+            int option = JOptionPane.showConfirmDialog(frame, message, "Добавить нарушение", JOptionPane.OK_CANCEL_OPTION);
+            if (option == JOptionPane.OK_OPTION) {
+                try {
+                    Violation violation = new Violation(
+                            licensePlateField.getText(),
+                            dateField.getText(),
+                            typeField.getText(),
+                            conn
+                    );
+                    PreparedStatement pstmt = conn.prepareStatement("INSERT INTO Violations (licensePlate, date, violationType) VALUES (?, ?, ?)");
+                    pstmt.setString(1, violation.getLicensePlate());
+                    pstmt.setString(2, violation.getDate());
+                    pstmt.setString(3, violation.getType());
+                    pstmt.executeUpdate();
+                    break;
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, ex.getMessage(), "Ошибка", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    public static void deleteSelectedRecords(JFrame frame) {
         int[] selectedRows = table.getSelectedRows();
         if (selectedRows.length == 0) {
             JOptionPane.showMessageDialog(frame, "Выберите записи для удаления.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
@@ -202,39 +299,55 @@ public class Main {
 
         int confirm = JOptionPane.showConfirmDialog(frame, "Вы уверены, что хотите удалить выделенные записи?", "Подтверждение удаления", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
-
         try {
             for (int row : selectedRows) {
-                String value = table.getValueAt(row, currentMode.equals("Drivers") ? 1 : (currentMode.equals("Cars") ? 4 : 0)).toString();
+                String value;
+                PreparedStatement pstmt;
                 if (currentMode.equals("Drivers")) {
-                    PreparedStatement pstmt = conn.prepareStatement("DELETE FROM Violations WHERE vin IN (SELECT vin FROM Cars WHERE driverLicenseNumber = ?)");
+                    value = table.getValueAt(row, 1).toString();
+
+                    pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate IN (SELECT licensePlate FROM Cars WHERE driverLicenseNumber = ?)");
                     pstmt.setString(1, value);
                     pstmt.executeUpdate();
 
+                    // Удаляем все машины водителя
                     pstmt = conn.prepareStatement("DELETE FROM Cars WHERE driverLicenseNumber = ?");
                     pstmt.setString(1, value);
                     pstmt.executeUpdate();
 
+                    // Удаляем водителя
                     pstmt = conn.prepareStatement("DELETE FROM Drivers WHERE driverLicenseNumber = ?");
                     pstmt.setString(1, value);
                     pstmt.executeUpdate();
+
                 } else if (currentMode.equals("Cars")) {
-                    PreparedStatement pstmt = conn.prepareStatement("DELETE FROM Violations WHERE vin = ?");
+                    // Получаем номер машины
+                    value = table.getValueAt(row, 0).toString();
+
+                    // Удаляем все связанные нарушения
+                    pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate = ?");
                     pstmt.setString(1, value);
                     pstmt.executeUpdate();
 
-                    pstmt = conn.prepareStatement("DELETE FROM Cars WHERE vin = ?");
+                    // Удаляем машину
+                    pstmt = conn.prepareStatement("DELETE FROM Cars WHERE licensePlate = ?");
                     pstmt.setString(1, value);
                     pstmt.executeUpdate();
-                } else {
-                    PreparedStatement pstmt = conn.prepareStatement("DELETE FROM Violations WHERE id = ?");
-                    pstmt.setString(1, value);
+
+                } else if (currentMode.equals("Violations")) {
+                    String licensePlate = table.getValueAt(row, 1).toString();
+                    String date = table.getValueAt(row, 3).toString();
+                    System.out.println("licensePlate: " + licensePlate + ", date: " + date);
+
+                    pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate = ? AND date = ?");
+                    pstmt.setString(1, licensePlate);
+                    pstmt.setString(2, date);
                     pstmt.executeUpdate();
                 }
             }
-            ((DefaultTableModel) table.getModel()).removeRow(table.getSelectedRow());
         } catch (SQLException ex) {
             ex.printStackTrace();
+            JOptionPane.showMessageDialog(frame, "Ошибка при удалении записей.", "Ошибка", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
