@@ -7,7 +7,8 @@ import java.io.File;
 public class Main {
     private static JTable table;
     private static String currentMode = "Violations";
-    private static Connection conn; // Постоянное подключение к БД
+    private static Connection conn = null; // Постоянное подключение к БД
+    private static JMenu dbPathMenu;
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("GAI System");
@@ -18,23 +19,15 @@ public class Main {
 
         // Меню Файл
         JMenu fileMenu = new JMenu("Файл");
+        JMenuItem createDB = new JMenuItem("Создать БД");
         JMenuItem connectDB = new JMenuItem("Подключить БД");
         JMenuItem createPdfReport = new JMenuItem("Создать отчёт PDF");
         JMenuItem createHtmlReport = new JMenuItem("Создать отчёт HTML");
+        fileMenu.add(createDB);
         fileMenu.add(connectDB);
         fileMenu.add(createPdfReport);
         fileMenu.add(createHtmlReport);
         menuBar.add(fileMenu);
-
-        // Меню Вид
-        JMenu viewMenu = new JMenu("Вид");
-        JMenuItem viewDrivers = new JMenuItem("Водители");
-        JMenuItem viewCars = new JMenuItem("Машины");
-        JMenuItem viewViolations = new JMenuItem("Нарушения");
-        viewMenu.add(viewDrivers);
-        viewMenu.add(viewCars);
-        viewMenu.add(viewViolations);
-        menuBar.add(viewMenu);
 
         // Меню Добавить
         JMenu addMenu = new JMenu("Добавить");
@@ -53,6 +46,22 @@ public class Main {
         editMenu.add(editRecord);
         editMenu.add(deleteRecord);
         menuBar.add(editMenu);
+
+        // Меню Вид
+        JMenu viewMenu = new JMenu("Вид");
+        JMenuItem viewDrivers = new JMenuItem("Водители");
+        JMenuItem viewCars = new JMenuItem("Машины");
+        JMenuItem viewViolations = new JMenuItem("Нарушения");
+        viewMenu.add(viewDrivers);
+        viewMenu.add(viewCars);
+        viewMenu.add(viewViolations);
+        menuBar.add(viewMenu);
+
+
+        // Добавляем метку для пути к БД
+        dbPathMenu = new JMenu("Не подключена БД");
+        dbPathMenu.setEnabled(false);
+        menuBar.add(dbPathMenu);
 
         frame.setJMenuBar(menuBar);
 
@@ -75,27 +84,20 @@ public class Main {
         searchPanel.add(searchButton);
         frame.add(searchPanel, BorderLayout.SOUTH);
 
-        // Обработчики переключения режимов
-        viewCars.addActionListener(e -> {
-            currentMode = "Cars";
-            table.setModel(new DefaultTableModel(new Object[][]{}, carColumns));
-            searchBox.setModel(new DefaultComboBoxModel<>(carColumns));
-            loadDatabase();
-        });
-        viewViolations.addActionListener(e -> {
-            currentMode = "Violations";
-            table.setModel(new DefaultTableModel(new Object[][]{}, violationColumns));
-            searchBox.setModel(new DefaultComboBoxModel<>(violationColumns));
-            loadDatabase();
-        });
-        viewDrivers.addActionListener(e -> {
-            currentMode = "Drivers";
-            table.setModel(new DefaultTableModel(new Object[][]{}, driverColumns));
-            searchBox.setModel(new DefaultComboBoxModel<>(driverColumns));
+        viewCars.addActionListener(e ->
+                switchView("Cars", carColumns, searchBox));
+
+        viewViolations.addActionListener(e ->
+                switchView("Violations", violationColumns, searchBox));
+
+        viewDrivers.addActionListener(e ->
+                switchView("Drivers", driverColumns, searchBox));
+
+        createDB.addActionListener(e -> {
+            createDatabase(frame);
             loadDatabase();
         });
 
-        // Подключение к БД
         connectDB.addActionListener(e -> {
             connectToDatabase(frame);
             loadDatabase();
@@ -124,15 +126,92 @@ public class Main {
         frame.setVisible(true);
     }
 
+    public static void createDatabase(JFrame frame) {
+        JFileChooser fileChooser = new JFileChooser(".");
+        fileChooser.setDialogTitle("Создать базу данных");
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("SQLite Database (*.db)", "db"));
+
+        int userSelection = fileChooser.showSaveDialog(frame);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            try {
+                File file = fileChooser.getSelectedFile();
+                if (!file.getName().endsWith(".db")) {
+                    file = new File(file.getAbsolutePath() + ".db");
+                }
+
+                // Проверка существования файла и предупреждение
+                if (file.exists()) {
+                    int openConfirm = JOptionPane.showConfirmDialog(frame, "Файл с таким именем уже существует. Открыть его?", "Предупреждение", JOptionPane.YES_NO_OPTION);
+                    if (openConfirm == JOptionPane.YES_OPTION) {
+                        conn = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
+                        dbPathMenu.setText(file.getAbsolutePath());
+                        JOptionPane.showMessageDialog(frame, "Подключена база данных.", "Успех", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    } else {
+                        return;
+                    }
+                }
+
+                // Подключаемся к новой БД
+                conn = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
+
+                // Создаем таблицы
+                Statement stmt = conn.createStatement();
+
+                stmt.execute("CREATE TABLE Drivers ("
+                        + "driverLicenseNumber TEXT PRIMARY KEY,"
+                        + "name TEXT,"
+                        + "gender TEXT,"
+                        + "birthDate TEXT,"
+                        + "licenseExpiryDate TEXT)");
+
+                stmt.execute("CREATE TABLE Cars ("
+                        + "licensePlate TEXT PRIMARY KEY,"
+                        + "driverLicenseNumber TEXT,"
+                        + "vin TEXT,"
+                        + "color TEXT,"
+                        + "model TEXT,"
+                        + "inspectionExpiryDate TEXT,"
+                        + "insuranceExpiryDate TEXT,"
+                        + "FOREIGN KEY(driverLicenseNumber) REFERENCES Drivers(driverLicenseNumber) ON DELETE CASCADE)");
+
+                stmt.execute("CREATE TABLE Violations ("
+                        + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                        + "licensePlate TEXT,"
+                        + "date TEXT,"
+                        + "violationType TEXT,"
+                        + "FOREIGN KEY(licensePlate) REFERENCES Cars(licensePlate) ON DELETE CASCADE)");
+
+                // Обновляем отображение пути к БД в меню
+                dbPathMenu.setText(file.getAbsolutePath());
+
+                JOptionPane.showMessageDialog(frame, "База данных успешно создана и подключена.", "Успех", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(frame, "Ошибка при создании базы данных.", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private static void connectToDatabase(JFrame frame) {
         JFileChooser fileChooser = new JFileChooser(".");
         fileChooser.setDialogTitle("Выбрать файл базы данных");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("SQLite Database (*.db)", "db"));
+
         if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
             File dbFile = fileChooser.getSelectedFile();
+            if (!dbFile.getName().endsWith(".db")) {
+                JOptionPane.showMessageDialog(frame, "Выбранный файл не является базой данных.", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             try {
                 conn = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+                dbPathMenu.setText(dbFile.getAbsolutePath());
             } catch (SQLException ex) {
                 ex.printStackTrace();
+                JOptionPane.showMessageDialog(frame, "Ошибка при подключении к базе данных.", "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -352,6 +431,15 @@ public class Main {
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(frame, "Ошибка при удалении записей.", "Ошибка", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void switchView(String mode, String[] columns, JComboBox<String> searchBox) {
+        currentMode = mode;
+        table.setModel(new DefaultTableModel(new Object[][]{}, columns));
+        searchBox.setModel(new DefaultComboBoxModel<>(columns));
+        if (conn != null) {
+            loadDatabase();
         }
     }
 }
