@@ -2,7 +2,6 @@ import java.sql.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.File;
 
 public class Main {
@@ -98,14 +97,8 @@ public class Main {
 
         // Подключение к БД
         connectDB.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser(".");
-            fileChooser.setDialogTitle("Выбрать файл базы данных");
-            int result = fileChooser.showOpenDialog(frame);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
-                connectToDatabase(file);
-                loadDatabase();
-            }
+            connectToDatabase(frame);
+            loadDatabase();
         });
 
         addDriver.addActionListener(e -> {
@@ -121,13 +114,19 @@ public class Main {
         frame.setVisible(true);
     }
 
-    private static void connectToDatabase(File file) {
-        try {
-            conn = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+    private static void connectToDatabase(JFrame frame) {
+        JFileChooser fileChooser = new JFileChooser(".");
+        fileChooser.setDialogTitle("Выбрать файл базы данных");
+        if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+            File dbFile = fileChooser.getSelectedFile();
+            try {
+                conn = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
+
 
     private static void loadDatabase() {
         try {
@@ -136,21 +135,25 @@ public class Main {
             DefaultTableModel model = (DefaultTableModel) table.getModel();
             model.setRowCount(0);
 
-            if (currentMode.equals("Drivers")) {
-                rs = stmt.executeQuery("SELECT d.name, d.driverLicenseNumber, d.gender, d.birthDate, d.licenseExpiryDate FROM Drivers d");
-                while (rs.next()) {
-                    model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)});
-                }
-            } else if (currentMode.equals("Cars")) {
-                rs = stmt.executeQuery("SELECT c.licensePlate, d.name, c.model, c.color, c.vin, c.insuranceExpiryDate, c.inspectionExpiryDate FROM Cars c JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
-                while (rs.next()) {
-                    model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7)});
-                }
-            } else if (currentMode.equals("Violations")) {
-                rs = stmt.executeQuery("SELECT d.name, c.licensePlate, v.violationType, v.date FROM Violations v JOIN Cars c ON v.vin = c.vin JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
-                while (rs.next()) {
-                    model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)});
-                }
+            switch (currentMode) {
+                case "Drivers":
+                    rs = stmt.executeQuery("SELECT d.name, d.driverLicenseNumber, d.gender, d.birthDate, d.licenseExpiryDate FROM Drivers d");
+                    while (rs.next()) {
+                        model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)});
+                    }
+                    break;
+                case "Cars":
+                    rs = stmt.executeQuery("SELECT c.licensePlate, d.name, c.model, c.color, c.vin, c.insuranceExpiryDate, c.inspectionExpiryDate FROM Cars c JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
+                    while (rs.next()) {
+                        model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7)});
+                    }
+                    break;
+                case "Violations":
+                    rs = stmt.executeQuery("SELECT d.name, c.licensePlate, v.violationType, v.date FROM Violations v JOIN Cars c ON v.vin = c.vin JOIN Drivers d ON c.driverLicenseNumber = d.driverLicenseNumber");
+                    while (rs.next()) {
+                        model.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)});
+                    }
+                    break;
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
