@@ -108,6 +108,8 @@ public class Main {
             }
         });
 
+        addDriver.addActionListener(e -> addDriverDialog(frame));
+
         frame.setVisible(true);
     }
 
@@ -144,6 +146,39 @@ public class Main {
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private static void addDriverDialog(JFrame frame) {
+        JTextField nameField = new JTextField();
+        JTextField genderField = new JTextField();
+        JTextField birthDateField = new JTextField();
+        JTextField licenseNumberField = new JTextField();
+        JTextField expiryDateField = new JTextField();
+
+        Object[] message = {"ФИО:", nameField, "Пол:", genderField, "Дата рождения:", birthDateField, "Номер ВУ:", licenseNumberField, "Срок действия ВУ:", expiryDateField};
+
+        while (true) {
+            int option = JOptionPane.showConfirmDialog(frame, message, "Добавить водителя", JOptionPane.OK_CANCEL_OPTION);
+            if (option == JOptionPane.OK_OPTION) {
+                try {
+                    Driver driver = new Driver(
+                            nameField.getText(), genderField.getText(), birthDateField.getText(), licenseNumberField.getText(), expiryDateField.getText(), conn);
+                    PreparedStatement pstmt = conn.prepareStatement(
+                            "INSERT INTO Drivers (name, gender, birthDate, driverLicenseNumber, licenseExpiryDate) VALUES (?, ?, ?, ?, ?)");
+                    pstmt.setString(1, driver.getName());
+                    pstmt.setString(2, driver.getGender());
+                    pstmt.setString(3, driver.getBirthDate());
+                    pstmt.setString(4, driver.getDriverLicenseNumber());
+                    pstmt.setString(5, driver.getLicenseExpiryDate());
+                    pstmt.executeUpdate();
+                    break;
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, ex.getMessage(), "Ошибка", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                break;
+            }
         }
     }
 }
