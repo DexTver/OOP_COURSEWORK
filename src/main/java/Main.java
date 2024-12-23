@@ -108,7 +108,15 @@ public class Main {
             }
         });
 
-        addDriver.addActionListener(e -> addDriverDialog(frame));
+        addDriver.addActionListener(e -> {
+            addDriverDialog(frame);
+            loadDatabase();
+        });
+
+        deleteRecord.addActionListener(e -> {
+            deleteSelectedRecords(frame);
+            loadDatabase();
+        });
 
         frame.setVisible(true);
     }
@@ -179,6 +187,51 @@ public class Main {
             } else {
                 break;
             }
+        }
+    }
+
+    private static void deleteSelectedRecords(JFrame frame) {
+        int[] selectedRows = table.getSelectedRows();
+        if (selectedRows.length == 0) {
+            JOptionPane.showMessageDialog(frame, "Выберите записи для удаления.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(frame, "Вы уверены, что хотите удалить выделенные записи?", "Подтверждение удаления", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        try {
+            for (int row : selectedRows) {
+                String value = table.getValueAt(row, currentMode.equals("Drivers") ? 1 : (currentMode.equals("Cars") ? 4 : 0)).toString();
+                if (currentMode.equals("Drivers")) {
+                    PreparedStatement pstmt = conn.prepareStatement("DELETE FROM Violations WHERE vin IN (SELECT vin FROM Cars WHERE driverLicenseNumber = ?)");
+                    pstmt.setString(1, value);
+                    pstmt.executeUpdate();
+
+                    pstmt = conn.prepareStatement("DELETE FROM Cars WHERE driverLicenseNumber = ?");
+                    pstmt.setString(1, value);
+                    pstmt.executeUpdate();
+
+                    pstmt = conn.prepareStatement("DELETE FROM Drivers WHERE driverLicenseNumber = ?");
+                    pstmt.setString(1, value);
+                    pstmt.executeUpdate();
+                } else if (currentMode.equals("Cars")) {
+                    PreparedStatement pstmt = conn.prepareStatement("DELETE FROM Violations WHERE vin = ?");
+                    pstmt.setString(1, value);
+                    pstmt.executeUpdate();
+
+                    pstmt = conn.prepareStatement("DELETE FROM Cars WHERE vin = ?");
+                    pstmt.setString(1, value);
+                    pstmt.executeUpdate();
+                } else {
+                    PreparedStatement pstmt = conn.prepareStatement("DELETE FROM Violations WHERE id = ?");
+                    pstmt.setString(1, value);
+                    pstmt.executeUpdate();
+                }
+            }
+            ((DefaultTableModel) table.getModel()).removeRow(table.getSelectedRow());
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 }
