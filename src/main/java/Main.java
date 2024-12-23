@@ -303,46 +303,50 @@ public class Main {
             for (int row : selectedRows) {
                 String value;
                 PreparedStatement pstmt;
-                if (currentMode.equals("Drivers")) {
-                    value = table.getValueAt(row, 1).toString();
+                switch (currentMode) {
+                    case "Drivers":
+                        value = table.getValueAt(row, 1).toString();
 
-                    pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate IN (SELECT licensePlate FROM Cars WHERE driverLicenseNumber = ?)");
-                    pstmt.setString(1, value);
-                    pstmt.executeUpdate();
+                        pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate IN (SELECT licensePlate FROM Cars WHERE driverLicenseNumber = ?)");
+                        pstmt.setString(1, value);
+                        pstmt.executeUpdate();
 
-                    // Удаляем все машины водителя
-                    pstmt = conn.prepareStatement("DELETE FROM Cars WHERE driverLicenseNumber = ?");
-                    pstmt.setString(1, value);
-                    pstmt.executeUpdate();
+                        // Удаляем все машины водителя
+                        pstmt = conn.prepareStatement("DELETE FROM Cars WHERE driverLicenseNumber = ?");
+                        pstmt.setString(1, value);
+                        pstmt.executeUpdate();
 
-                    // Удаляем водителя
-                    pstmt = conn.prepareStatement("DELETE FROM Drivers WHERE driverLicenseNumber = ?");
-                    pstmt.setString(1, value);
-                    pstmt.executeUpdate();
+                        // Удаляем водителя
+                        pstmt = conn.prepareStatement("DELETE FROM Drivers WHERE driverLicenseNumber = ?");
+                        pstmt.setString(1, value);
+                        pstmt.executeUpdate();
 
-                } else if (currentMode.equals("Cars")) {
-                    // Получаем номер машины
-                    value = table.getValueAt(row, 0).toString();
+                        break;
+                    case "Cars":
+                        // Получаем номер машины
+                        value = table.getValueAt(row, 0).toString();
 
-                    // Удаляем все связанные нарушения
-                    pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate = ?");
-                    pstmt.setString(1, value);
-                    pstmt.executeUpdate();
+                        // Удаляем все связанные нарушения
+                        pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate = ?");
+                        pstmt.setString(1, value);
+                        pstmt.executeUpdate();
 
-                    // Удаляем машину
-                    pstmt = conn.prepareStatement("DELETE FROM Cars WHERE licensePlate = ?");
-                    pstmt.setString(1, value);
-                    pstmt.executeUpdate();
+                        // Удаляем машину
+                        pstmt = conn.prepareStatement("DELETE FROM Cars WHERE licensePlate = ?");
+                        pstmt.setString(1, value);
+                        pstmt.executeUpdate();
 
-                } else if (currentMode.equals("Violations")) {
-                    String licensePlate = table.getValueAt(row, 1).toString();
-                    String date = table.getValueAt(row, 3).toString();
-                    System.out.println("licensePlate: " + licensePlate + ", date: " + date);
+                        break;
+                    case "Violations":
+                        String licensePlate = table.getValueAt(row, 1).toString();
+                        String date = table.getValueAt(row, 3).toString();
+                        System.out.println("licensePlate: " + licensePlate + ", date: " + date);
 
-                    pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate = ? AND date = ?");
-                    pstmt.setString(1, licensePlate);
-                    pstmt.setString(2, date);
-                    pstmt.executeUpdate();
+                        pstmt = conn.prepareStatement("DELETE FROM Violations WHERE licensePlate = ? AND date = ?");
+                        pstmt.setString(1, licensePlate);
+                        pstmt.setString(2, date);
+                        pstmt.executeUpdate();
+                        break;
                 }
             }
         } catch (SQLException ex) {
