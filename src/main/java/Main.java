@@ -147,10 +147,8 @@ public class Main {
                         conn = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
                         dbPathMenu.setText(file.getAbsolutePath());
                         JOptionPane.showMessageDialog(frame, "Подключена база данных.", "Успех", JOptionPane.INFORMATION_MESSAGE);
-                        return;
-                    } else {
-                        return;
                     }
+                    return;
                 }
 
                 // Подключаемся к новой БД
@@ -218,6 +216,7 @@ public class Main {
 
 
     private static void loadDatabase() {
+        if (conn == null) return;
         try {
             Statement stmt = conn.createStatement();
             ResultSet rs;
@@ -250,6 +249,7 @@ public class Main {
     }
 
     private static void addDriverDialog(JFrame frame) {
+        if (conn == null) return;
         JTextField nameField = new JTextField();
         JTextField genderField = new JTextField();
         JTextField birthDateField = new JTextField();
@@ -259,6 +259,7 @@ public class Main {
         Object[] message = {"ФИО:", nameField, "Пол:", genderField, "Дата рождения:", birthDateField, "Номер ВУ:", licenseNumberField, "Срок действия ВУ:", expiryDateField};
 
         while (true) {
+            UIManager.put("OptionPane.informationIcon", new ImageIcon());
             int option = JOptionPane.showConfirmDialog(frame, message, "Добавить водителя", JOptionPane.OK_CANCEL_OPTION);
             if (option == JOptionPane.OK_OPTION) {
                 try {
@@ -282,6 +283,7 @@ public class Main {
     }
 
     public static void addCarDialog(JFrame frame) {
+        if (conn == null) return;
         JTextField vinField = new JTextField();
         JTextField licenseNumberField = new JTextField();
         JTextField licensePlateField = new JTextField();
@@ -301,6 +303,7 @@ public class Main {
         };
 
         while (true) {
+            UIManager.put("OptionPane.informationIcon", new ImageIcon());
             int option = JOptionPane.showConfirmDialog(frame, message, "Добавить машину", JOptionPane.OK_CANCEL_OPTION);
             if (option == JOptionPane.OK_OPTION) {
                 try {
@@ -334,6 +337,7 @@ public class Main {
     }
 
     public static void addViolationDialog(JFrame frame) {
+        if (conn == null) return;
         JTextField licensePlateField = new JTextField();
         JTextField dateField = new JTextField();
         JTextField typeField = new JTextField();
@@ -345,6 +349,7 @@ public class Main {
         };
 
         while (true) {
+            UIManager.put("OptionPane.informationIcon", new ImageIcon());
             int option = JOptionPane.showConfirmDialog(frame, message, "Добавить нарушение", JOptionPane.OK_CANCEL_OPTION);
             if (option == JOptionPane.OK_OPTION) {
                 try {
@@ -438,8 +443,6 @@ public class Main {
         currentMode = mode;
         table.setModel(new DefaultTableModel(new Object[][]{}, columns));
         searchBox.setModel(new DefaultComboBoxModel<>(columns));
-        if (conn != null) {
-            loadDatabase();
-        }
+        loadDatabase();
     }
 }
