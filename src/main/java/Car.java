@@ -42,6 +42,49 @@ class Car {
         this.insuranceExpiryDate = insuranceExpiryDate;
     }
 
+    public Car(String driverLicenseNumber, String licensePlate, String color, String model, String inspectionExpiryDate, String insuranceExpiryDate, Connection conn) throws Exception {
+        if (!driverExists(driverLicenseNumber, conn)) {
+            throw new Exception("Водитель с таким номером ВУ не найден.");
+        }
+        if (!isValidLicensePlate(licensePlate)) {
+            throw new Exception("Некорректный формат номерного знака.");
+        }
+        if (!isUniqueLicensePlate(licensePlate, conn)) {
+            throw new Exception("Номерной знак уже существует.");
+        }
+        if (!isValidDate(inspectionExpiryDate)) {
+            throw new Exception("Некорректная дата окончания техосмотра.");
+        }
+        if (!isValidDate(insuranceExpiryDate)) {
+            throw new Exception("Некорректная дата окончания страховки.");
+        }
+
+        this.driverLicenseNumber = driverLicenseNumber;
+        this.licensePlate = licensePlate;
+        this.color = color;
+        this.model = model;
+        this.inspectionExpiryDate = inspectionExpiryDate;
+        this.insuranceExpiryDate = insuranceExpiryDate;
+    }
+
+    public Car(String driverLicenseNumber, String color, String model, String inspectionExpiryDate, String insuranceExpiryDate, Connection conn) throws Exception {
+        if (!driverExists(driverLicenseNumber, conn)) {
+            throw new Exception("Водитель с таким номером ВУ не найден.");
+        }
+        if (!isValidDate(inspectionExpiryDate)) {
+            throw new Exception("Некорректная дата окончания техосмотра.");
+        }
+        if (!isValidDate(insuranceExpiryDate)) {
+            throw new Exception("Некорректная дата окончания страховки.");
+        }
+
+        this.driverLicenseNumber = driverLicenseNumber;
+        this.color = color;
+        this.model = model;
+        this.inspectionExpiryDate = inspectionExpiryDate;
+        this.insuranceExpiryDate = insuranceExpiryDate;
+    }
+
     private boolean driverExists(String licenseNumber, Connection conn) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM Drivers WHERE driverLicenseNumber = ?");
         pstmt.setString(1, licenseNumber);
@@ -104,5 +147,9 @@ class Car {
 
     public String getInsuranceExpiryDate() {
         return insuranceExpiryDate;
+    }
+
+    public void setLicensePlate(String licensePlate) {
+        this.licensePlate = licensePlate;
     }
 }

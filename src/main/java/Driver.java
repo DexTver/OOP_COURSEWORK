@@ -34,6 +34,26 @@ class Driver {
         this.licenseExpiryDate = licenseExpiryDate;
     }
 
+    public Driver(String name, String gender, String birthDate, String licenseExpiryDate) throws Exception {
+        if (!isValidName(name)) {
+            throw new Exception("Некорректное имя.");
+        }
+        if (!isValidGender(gender)) {
+            throw new Exception("Пол должен быть 'мужской' или 'женский'.");
+        }
+        if (!isValidDate(birthDate)) {
+            throw new Exception("Некорректная дата рождения (формат: dd.mm.yyyy).\nПример: 01.01.2000");
+        }
+        if (!isValidDate(licenseExpiryDate)) {
+            throw new Exception("Некорректная дата окончания действия ВУ (формат: dd.mm.yyyy).\nПример: 01.01.2030");
+        }
+
+        this.name = name;
+        this.gender = gender;
+        this.birthDate = birthDate;
+        this.licenseExpiryDate = licenseExpiryDate;
+    }
+
     private boolean isValidName(String name) {
         return name != null && !name.trim().isEmpty();
     }
@@ -58,9 +78,23 @@ class Driver {
         return rs.getInt(1) == 0;
     }
 
-    public String getName() { return name; }
-    public String getGender() { return gender; }
-    public String getBirthDate() { return birthDate; }
-    public String getDriverLicenseNumber() { return driverLicenseNumber; }
-    public String getLicenseExpiryDate() { return licenseExpiryDate; }
+    public String getName() {
+        return name;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public String getBirthDate() {
+        return birthDate;
+    }
+
+    public String getDriverLicenseNumber() {
+        return driverLicenseNumber;
+    }
+
+    public String getLicenseExpiryDate() {
+        return licenseExpiryDate;
+    }
 }
