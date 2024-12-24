@@ -388,9 +388,6 @@ public class Main {
                 editViolationDialog(frame, selectedRow);
                 break;
         }
-        if (currentMode.equals("Violations")) {
-            editViolationDialog(frame, selectedRow);
-        }
     }
 
     private static void editDriverDialog(JFrame frame, int selectedRow) {

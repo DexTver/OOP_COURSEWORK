@@ -1,16 +1,14 @@
 import java.sql.*;
 
 class Violation {
-    private String licensePlate;
-    private String date;
-    private String type;
+    private final String licensePlate;
+    private final String date;
+    private final String type;
 
     public Violation(String licensePlate, String date, String type, Connection conn) throws Exception {
-        // Проверка существования номера машины
         if (!carExists(licensePlate, conn)) {
             throw new Exception("Автомобиль с таким номерным знаком не найден.");
         }
-        // Проверка корректности даты
         if (!isValidDate(date)) {
             throw new Exception("Некорректная дата нарушения.");
         }

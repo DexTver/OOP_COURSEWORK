@@ -1,23 +1,20 @@
 import java.sql.*;
 
-class Driver {
-    private String name;
-    private String gender;
-    private String birthDate;
+class Driver extends Person{
     private String driverLicenseNumber;
-    private String licenseExpiryDate;
+    private final String licenseExpiryDate;
 
     public Driver(String name, String gender, String birthDate, String driverLicenseNumber, String licenseExpiryDate, Connection conn) throws Exception {
-        if (!isValidName(name)) {
+        if (isInvalidName(name)) {
             throw new Exception("Некорректное имя.");
         }
-        if (!isValidGender(gender)) {
+        if (isInvalidGender(gender)) {
             throw new Exception("Пол должен быть 'мужской' или 'женский'.");
         }
-        if (!isValidDate(birthDate)) {
+        if (isInvalidDate(birthDate)) {
             throw new Exception("Некорректная дата рождения (формат: dd.mm.yyyy).\nПример: 01.01.2000");
         }
-        if (!isValidDate(licenseExpiryDate)) {
+        if (isInvalidDate(licenseExpiryDate)) {
             throw new Exception("Некорректная дата окончания действия ВУ (формат: dd.mm.yyyy).\nПример: 01.01.2030");
         }
         if (!isValidLicenseNumber(driverLicenseNumber)) {
@@ -35,16 +32,16 @@ class Driver {
     }
 
     public Driver(String name, String gender, String birthDate, String licenseExpiryDate) throws Exception {
-        if (!isValidName(name)) {
+        if (isInvalidName(name)) {
             throw new Exception("Некорректное имя.");
         }
-        if (!isValidGender(gender)) {
+        if (isInvalidGender(gender)) {
             throw new Exception("Пол должен быть 'мужской' или 'женский'.");
         }
-        if (!isValidDate(birthDate)) {
+        if (isInvalidDate(birthDate)) {
             throw new Exception("Некорректная дата рождения (формат: dd.mm.yyyy).\nПример: 01.01.2000");
         }
-        if (!isValidDate(licenseExpiryDate)) {
+        if (isInvalidDate(licenseExpiryDate)) {
             throw new Exception("Некорректная дата окончания действия ВУ (формат: dd.mm.yyyy).\nПример: 01.01.2030");
         }
 
@@ -54,16 +51,16 @@ class Driver {
         this.licenseExpiryDate = licenseExpiryDate;
     }
 
-    private boolean isValidName(String name) {
-        return name != null && !name.trim().isEmpty();
+    private boolean isInvalidName(String name) {
+        return name == null || name.trim().isEmpty();
     }
 
-    private boolean isValidGender(String gender) {
-        return gender.equalsIgnoreCase("мужской") || gender.equalsIgnoreCase("женский");
+    private boolean isInvalidGender(String gender) {
+        return !gender.equalsIgnoreCase("мужской") && !gender.equalsIgnoreCase("женский");
     }
 
-    private boolean isValidDate(String date) {
-        return date.matches("^\\d{2}\\.\\d{2}\\.\\d{4}$");
+    private boolean isInvalidDate(String date) {
+        return !date.matches("^\\d{2}\\.\\d{2}\\.\\d{4}$");
     }
 
     private boolean isValidLicenseNumber(String licenseNumber) {

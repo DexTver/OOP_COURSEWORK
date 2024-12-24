@@ -1,14 +1,13 @@
 import java.sql.*;
-import java.util.Random;
 
 class Car {
     private String vin;
-    private String driverLicenseNumber;
+    private final String driverLicenseNumber;
     private String licensePlate;
-    private String color;
-    private String model;
-    private String inspectionExpiryDate;
-    private String insuranceExpiryDate;
+    private final String color;
+    private final String model;
+    private final String inspectionExpiryDate;
+    private final String insuranceExpiryDate;
 
     public Car(String vin, String driverLicenseNumber, String licensePlate, String color, String model, String inspectionExpiryDate, String insuranceExpiryDate, Connection conn) throws Exception {
         if (!isValidVIN(vin)) {
@@ -17,19 +16,19 @@ class Car {
         if (!isUniqueVIN(vin, conn)) {
             throw new Exception("VIN номер уже существует.");
         }
-        if (!driverExists(driverLicenseNumber, conn)) {
+        if (driveNotExists(driverLicenseNumber, conn)) {
             throw new Exception("Водитель с таким номером ВУ не найден.");
         }
-        if (!isValidLicensePlate(licensePlate)) {
+        if (isInvalidLicensePlate(licensePlate)) {
             throw new Exception("Некорректный формат номерного знака.");
         }
-        if (!isUniqueLicensePlate(licensePlate, conn)) {
+        if (isLicensePlateExist(licensePlate, conn)) {
             throw new Exception("Номерной знак уже существует.");
         }
-        if (!isValidDate(inspectionExpiryDate)) {
+        if (isInvalidDate(inspectionExpiryDate)) {
             throw new Exception("Некорректная дата окончания техосмотра.");
         }
-        if (!isValidDate(insuranceExpiryDate)) {
+        if (isInvalidDate(insuranceExpiryDate)) {
             throw new Exception("Некорректная дата окончания страховки.");
         }
 
@@ -43,19 +42,19 @@ class Car {
     }
 
     public Car(String driverLicenseNumber, String licensePlate, String color, String model, String inspectionExpiryDate, String insuranceExpiryDate, Connection conn) throws Exception {
-        if (!driverExists(driverLicenseNumber, conn)) {
+        if (driveNotExists(driverLicenseNumber, conn)) {
             throw new Exception("Водитель с таким номером ВУ не найден.");
         }
-        if (!isValidLicensePlate(licensePlate)) {
+        if (isInvalidLicensePlate(licensePlate)) {
             throw new Exception("Некорректный формат номерного знака.");
         }
-        if (!isUniqueLicensePlate(licensePlate, conn)) {
+        if (isLicensePlateExist(licensePlate, conn)) {
             throw new Exception("Номерной знак уже существует.");
         }
-        if (!isValidDate(inspectionExpiryDate)) {
+        if (isInvalidDate(inspectionExpiryDate)) {
             throw new Exception("Некорректная дата окончания техосмотра.");
         }
-        if (!isValidDate(insuranceExpiryDate)) {
+        if (isInvalidDate(insuranceExpiryDate)) {
             throw new Exception("Некорректная дата окончания страховки.");
         }
 
@@ -68,13 +67,13 @@ class Car {
     }
 
     public Car(String driverLicenseNumber, String color, String model, String inspectionExpiryDate, String insuranceExpiryDate, Connection conn) throws Exception {
-        if (!driverExists(driverLicenseNumber, conn)) {
+        if (driveNotExists(driverLicenseNumber, conn)) {
             throw new Exception("Водитель с таким номером ВУ не найден.");
         }
-        if (!isValidDate(inspectionExpiryDate)) {
+        if (isInvalidDate(inspectionExpiryDate)) {
             throw new Exception("Некорректная дата окончания техосмотра.");
         }
-        if (!isValidDate(insuranceExpiryDate)) {
+        if (isInvalidDate(insuranceExpiryDate)) {
             throw new Exception("Некорректная дата окончания страховки.");
         }
 
@@ -85,24 +84,24 @@ class Car {
         this.insuranceExpiryDate = insuranceExpiryDate;
     }
 
-    private boolean driverExists(String licenseNumber, Connection conn) throws SQLException {
+    private boolean driveNotExists(String licenseNumber, Connection conn) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM Drivers WHERE driverLicenseNumber = ?");
         pstmt.setString(1, licenseNumber);
         ResultSet rs = pstmt.executeQuery();
         rs.next();
-        return rs.getInt(1) > 0;
+        return rs.getInt(1) <= 0;
     }
 
-    private boolean isValidLicensePlate(String plate) {
-        return plate.matches("^[АВЕКМНОРСТУХ]{1}\\d{3}[АВЕКМНОРСТУХ]{2}\\d{2,3}$");
+    private boolean isInvalidLicensePlate(String plate) {
+        return !plate.matches("^[АВЕКМНОРСТУХ]\\d{3}[АВЕКМНОРСТУХ]{2}\\d{2,3}$");
     }
 
-    private boolean isUniqueLicensePlate(String plate, Connection conn) throws SQLException {
+    private boolean isLicensePlateExist(String plate, Connection conn) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM Cars WHERE licensePlate = ?");
         pstmt.setString(1, plate);
         ResultSet rs = pstmt.executeQuery();
         rs.next();
-        return rs.getInt(1) == 0;
+        return rs.getInt(1) != 0;
     }
 
     private boolean isValidVIN(String vin) {
@@ -117,8 +116,8 @@ class Car {
         return rs.getInt(1) == 0;
     }
 
-    private boolean isValidDate(String date) {
-        return date.matches("^\\d{2}\\.\\d{2}\\.\\d{4}$");
+    private boolean isInvalidDate(String date) {
+        return !date.matches("^\\d{2}\\.\\d{2}\\.\\d{4}$");
     }
 
     public String getVIN() {
