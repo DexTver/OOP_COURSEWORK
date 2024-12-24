@@ -1,8 +1,12 @@
 import java.sql.*;
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Date;
+
 
 public class Main {
     private static JTable table;
@@ -125,6 +129,8 @@ public class Main {
                 loadDatabase();
             }
         });
+
+        searchButton.addActionListener(e -> searchRecords(searchBox, searchField));
 
         frame.setVisible(true);
     }
@@ -603,6 +609,39 @@ public class Main {
         searchBox.setModel(new DefaultComboBoxModel<>(columns));
         if (conn != null) {
             loadDatabase();
+        }
+    }
+
+    private static boolean isDateInRange(String date, String startDate, String endDate) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+            Date targetDate = sdf.parse(date);
+            Date start = sdf.parse(startDate);
+            Date end = sdf.parse(endDate);
+            return !targetDate.before(start) && !targetDate.after(end);
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+
+    private static void searchRecords(JComboBox<String> searchBox, JTextField searchField) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        String searchValue = searchField.getText().trim();
+        int columnIndex = searchBox.getSelectedIndex();
+
+        table.clearSelection();
+
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String cellValue = model.getValueAt(i, columnIndex).toString().trim();
+
+            if (searchValue.matches("\\d{2}\\.\\d{2}\\.\\d{4}-\\d{2}\\.\\d{2}\\.\\d{4}")) {
+                String[] dates = searchValue.split("-");
+                if (isDateInRange(cellValue, dates[0], dates[1])) {
+                    table.addRowSelectionInterval(i, i);
+                }
+            } else if (cellValue.toLowerCase().contains(searchValue.toLowerCase())) {
+                table.addRowSelectionInterval(i, i);
+            }
         }
     }
 }
